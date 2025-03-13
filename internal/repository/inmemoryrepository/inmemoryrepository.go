@@ -1,4 +1,4 @@
-package mockrepository
+package inmemoryrepository
 
 import (
 	"errors"
@@ -6,30 +6,30 @@ import (
 	"sync"
 )
 
-type MockRepository struct {
+type InMemoryRepository struct {
 	mu       sync.Mutex
 	books    map[string]domain.Book
 	users    map[string]domain.User
 	lendings map[string]domain.Lending
 }
 
-func New() *MockRepository {
-	return &MockRepository{
+func New() *InMemoryRepository {
+	return &InMemoryRepository{
 		books:    make(map[string]domain.Book),
 		users:    make(map[string]domain.User),
 		lendings: make(map[string]domain.Lending),
 	}
 }
 
-func (repo *MockRepository) Connect() error {
+func (repo *InMemoryRepository) Connect() error {
 	return nil
 }
 
-func (repo *MockRepository) Disconnect() error {
+func (repo *InMemoryRepository) Disconnect() error {
 	return nil
 }
 
-func (repo *MockRepository) GetBooks() ([]domain.Book, error) {
+func (repo *InMemoryRepository) GetBooks() ([]domain.Book, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -40,7 +40,7 @@ func (repo *MockRepository) GetBooks() ([]domain.Book, error) {
 	return books, nil
 }
 
-func (repo *MockRepository) GetBookByID(id string) (domain.Book, error) {
+func (repo *InMemoryRepository) GetBookByID(id string) (domain.Book, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -50,14 +50,14 @@ func (repo *MockRepository) GetBookByID(id string) (domain.Book, error) {
 	return domain.Book{}, errors.New("book not found")
 }
 
-func (repo *MockRepository) CreateBook(book domain.Book) (domain.Book, error) {
+func (repo *InMemoryRepository) CreateBook(book domain.Book) (domain.Book, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	repo.books[book.ID] = book
 	return book, nil
 }
 
-func (repo *MockRepository) UpdateBook(updated domain.Book) (domain.Book, error) {
+func (repo *InMemoryRepository) UpdateBook(updated domain.Book) (domain.Book, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -68,7 +68,7 @@ func (repo *MockRepository) UpdateBook(updated domain.Book) (domain.Book, error)
 	return updated, nil
 }
 
-func (repo *MockRepository) DeleteBook(id string) error {
+func (repo *InMemoryRepository) DeleteBook(id string) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -79,7 +79,7 @@ func (repo *MockRepository) DeleteBook(id string) error {
 	return nil
 }
 
-func (repo *MockRepository) GetUsers() ([]domain.User, error) {
+func (repo *InMemoryRepository) GetUsers() ([]domain.User, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -90,7 +90,7 @@ func (repo *MockRepository) GetUsers() ([]domain.User, error) {
 	return users, nil
 }
 
-func (repo *MockRepository) GetUserByID(id string) (domain.User, error) {
+func (repo *InMemoryRepository) GetUserByID(id string) (domain.User, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -100,14 +100,14 @@ func (repo *MockRepository) GetUserByID(id string) (domain.User, error) {
 	return domain.User{}, errors.New("user not found")
 }
 
-func (repo *MockRepository) CreateUser(user domain.User) (domain.User, error) {
+func (repo *InMemoryRepository) CreateUser(user domain.User) (domain.User, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	repo.users[user.ID] = user
 	return user, nil
 }
 
-func (repo *MockRepository) UpdateUser(updated domain.User) (domain.User, error) {
+func (repo *InMemoryRepository) UpdateUser(updated domain.User) (domain.User, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -118,7 +118,7 @@ func (repo *MockRepository) UpdateUser(updated domain.User) (domain.User, error)
 	return updated, nil
 }
 
-func (repo *MockRepository) DeleteUser(id string) error {
+func (repo *InMemoryRepository) DeleteUser(id string) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -129,7 +129,7 @@ func (repo *MockRepository) DeleteUser(id string) error {
 	return nil
 }
 
-func (repo *MockRepository) GetLendings() ([]domain.Lending, error) {
+func (repo *InMemoryRepository) GetLendings() ([]domain.Lending, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -140,7 +140,7 @@ func (repo *MockRepository) GetLendings() ([]domain.Lending, error) {
 	return lendings, nil
 }
 
-func (repo *MockRepository) GetLendingByID(id string) (domain.Lending, error) {
+func (repo *InMemoryRepository) GetLendingByID(id string) (domain.Lending, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -150,14 +150,14 @@ func (repo *MockRepository) GetLendingByID(id string) (domain.Lending, error) {
 	return domain.Lending{}, errors.New("lending not found")
 }
 
-func (repo *MockRepository) CreateLending(lending domain.Lending) (domain.Lending, error) {
+func (repo *InMemoryRepository) CreateLending(lending domain.Lending) (domain.Lending, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	repo.lendings[lending.ID] = lending
 	return lending, nil
 }
 
-func (repo *MockRepository) UpdateLending(updated domain.Lending) (domain.Lending, error) {
+func (repo *InMemoryRepository) UpdateLending(updated domain.Lending) (domain.Lending, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -168,7 +168,7 @@ func (repo *MockRepository) UpdateLending(updated domain.Lending) (domain.Lendin
 	return updated, nil
 }
 
-func (repo *MockRepository) DeleteLending(id string) error {
+func (repo *InMemoryRepository) DeleteLending(id string) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 

@@ -1,3 +1,4 @@
+//go:generate mockery --name=Router --output=../../generated/mocks --case=underscore
 package router
 
 import (

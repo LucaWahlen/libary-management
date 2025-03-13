@@ -1,4 +1,4 @@
-package router
+package gin
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,11 +7,11 @@ import (
 )
 
 type GinRouter struct {
-	engine *gin.Engine
+	Engine *gin.Engine
 }
 
 func NewGinRouter(service app.Service) *GinRouter {
-	r := GinRouter{engine: gin.Default()}
+	r := GinRouter{Engine: gin.Default()}
 
 	r.GET("/books", service.GetBooks)
 	r.GET("/books/:id", service.GetBookByID)
@@ -35,21 +35,21 @@ func NewGinRouter(service app.Service) *GinRouter {
 }
 
 func (r *GinRouter) GET(path string, handler http.HandlerFunc) {
-	r.engine.GET(path, gin.WrapF(handler))
+	r.Engine.GET(path, gin.WrapF(handler))
 }
 
 func (r *GinRouter) POST(path string, handler http.HandlerFunc) {
-	r.engine.POST(path, gin.WrapF(handler))
+	r.Engine.POST(path, gin.WrapF(handler))
 }
 
 func (r *GinRouter) PUT(path string, handler http.HandlerFunc) {
-	r.engine.PUT(path, gin.WrapF(handler))
+	r.Engine.PUT(path, gin.WrapF(handler))
 }
 
 func (r *GinRouter) DELETE(path string, handler http.HandlerFunc) {
-	r.engine.DELETE(path, gin.WrapF(handler))
+	r.Engine.DELETE(path, gin.WrapF(handler))
 }
 
 func (r *GinRouter) Serve(addr string) error {
-	return r.engine.Run(addr)
+	return r.Engine.Run(addr)
 }

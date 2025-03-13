@@ -11,7 +11,7 @@ type Validator struct {
 	repository repository.Repository
 }
 
-func NewValidator(repository repository.Repository) *Validator {
+func New(repository repository.Repository) *Validator {
 	return &Validator{repository}
 }
 

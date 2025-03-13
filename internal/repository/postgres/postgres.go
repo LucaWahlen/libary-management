@@ -22,18 +22,12 @@ func New() *PostgresRepository {
 
 func (repo *PostgresRepository) Connect() error {
 	dbURL := os.Getenv("DATABASE_URL")
-
 	var err error
-	repo.db, err = pgx.Connect(context.Background(), dbURL)
+	conn, err := pgx.Connect(context.Background(), dbURL)
 	if err != nil {
 		return err
 	}
-
-	err = repo.db.Ping(context.Background())
-	if err != nil {
-		return err
-	}
-
+	repo.db = conn
 	log.Printf("Successfully connected to database")
 	return nil
 }

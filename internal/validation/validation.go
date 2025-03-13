@@ -1,3 +1,4 @@
+//go:generate mockery --name=Validation --output=../../generated/mocks --case=underscore
 package validation
 
 import "libary-service/internal/domain"
