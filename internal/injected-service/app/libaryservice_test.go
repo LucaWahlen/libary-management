@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"libary-service/internal/domain"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"libary-service/generated/mocks"
-	"libary-service/internal/domain"
 )
 
 func TestExtractID(t *testing.T) {

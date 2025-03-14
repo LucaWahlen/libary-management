@@ -2,7 +2,7 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"libary-service/internal/app"
+	"libary-service/internal/injected-service/app"
 	"net/http"
 )
 

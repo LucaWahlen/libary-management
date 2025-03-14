@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"libary-service/internal/domain"
 	"testing"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"libary-service/generated/mocks"
-	"libary-service/internal/domain"
 )
 
 func TestCheckBook(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"libary-service/internal/domain"
-	"libary-service/internal/repository"
+	"libary-service/internal/injected-service/repository"
 )
 
 type Validator struct {
