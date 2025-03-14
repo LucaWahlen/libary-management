@@ -1,2 +1,2 @@
 # Exclude generated mocks
-internal/**/mocks
+generated/mocks
