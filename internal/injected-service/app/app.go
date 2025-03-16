@@ -1,4 +1,4 @@
-//go:generate mockery --name=Service --output=../../generated/mocks --case=underscore
+//go:generate mockery --name=Service --output=../../../generated/mocks --case=underscore
 package app
 
 import (

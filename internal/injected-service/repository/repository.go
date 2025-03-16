@@ -1,4 +1,4 @@
-//go:generate mockery --name=Repository --output=../../generated/mocks --case=underscore
+//go:generate mockery --name=Repository --output=../../../generated/mocks --case=underscore
 package repository
 
 import (

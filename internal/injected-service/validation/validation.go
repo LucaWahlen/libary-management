@@ -1,4 +1,4 @@
-//go:generate mockery --name=Validation --output=../../generated/mocks --case=underscore
+//go:generate mockery --name=Validation --output=../../../generated/mocks --case=underscore
 package validation
 
 import (

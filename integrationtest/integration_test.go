@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	directServiceURL   = "http://localhost:8082"
+	directServiceURL   = "http://localhost:8081"
 	injectedServiceURL = "http://localhost:8080"
 )
 
