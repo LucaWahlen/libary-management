@@ -132,7 +132,7 @@ func TestCreateUser(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 
 	result, err := repo.CreateUser(user)
@@ -148,12 +148,12 @@ func TestGetUsers(t *testing.T) {
 	user1 := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 	user2 := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Erika Mustermann",
-		Email: "erika.mustermann@example.com",
+		Email: "erika@mustermann.de",
 	}
 
 	_, err := repo.CreateUser(user1)
@@ -173,7 +173,7 @@ func TestGetUserByID(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 
 	_, err := repo.CreateUser(user)
@@ -193,21 +193,23 @@ func TestUpdateUser(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Erika Mustermann",
-		Email: "erika.mustermann@example.com",
+		Email: "erika@mustermann.de",
 	}
 
 	_, err := repo.CreateUser(user)
 	assert.NoError(t, err)
 
 	updated := user
-	updated.Email = "erika.mustermann.new@example.com"
+	updated.Name = "Max Mustermann"
+	updated.Email = "max@mustermann.de"
 	result, err := repo.UpdateUser(updated)
 	assert.NoError(t, err)
 	assert.Equal(t, updated, result)
 
 	stored, err := repo.GetUserByID(user.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, "erika.mustermann.new@example.com", stored.Email)
+	assert.Equal(t, "max@mustermann.de", stored.Email)
+	assert.Equal(t, "Max Mustermann", stored.Name)
 
 	nonExistent := domain.User{ID: uuid.New().String()}
 	_, err = repo.UpdateUser(nonExistent)
@@ -220,7 +222,7 @@ func TestDeleteUser(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 
 	_, err := repo.CreateUser(user)
@@ -248,7 +250,7 @@ func TestCreateLending(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 
 	_, err := repo.CreateBook(book)
@@ -287,12 +289,12 @@ func TestGetLendings(t *testing.T) {
 	user1 := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 	user2 := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Erika Mustermann",
-		Email: "erika.mustermann@example.com",
+		Email: "erika@mustermann.de",
 	}
 
 	_, err := repo.CreateBook(book1)
@@ -341,7 +343,7 @@ func TestGetLendingByID(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Erika Mustermann",
-		Email: "erika.mustermann@example.com",
+		Email: "erika@mustermann.de",
 	}
 
 	_, err := repo.CreateBook(book)
@@ -379,7 +381,7 @@ func TestUpdateLending(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Max Mustermann",
-		Email: "max.musterman@example.com",
+		Email: "max@mustermann.de",
 	}
 
 	_, err := repo.CreateBook(book)
@@ -424,7 +426,7 @@ func TestDeleteLending(t *testing.T) {
 	user := domain.User{
 		ID:    uuid.New().String(),
 		Name:  "Erika Mustermann",
-		Email: "erika.mustermann@example.com",
+		Email: "erika@mustermann.de",
 	}
 
 	_, err := repo.CreateBook(book)
