@@ -1,12 +1,13 @@
-package integration_tests
+package integrationtest
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -18,44 +19,26 @@ import (
 )
 
 const (
-	directServiceURL   = "http://localhost:8081"
+	directServiceURL   = "http://localhost:8082"
 	injectedServiceURL = "http://localhost:8080"
 )
 
-func setupTestDatabase(t *testing.T) {
-	// Connect to database
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://postgres:password@localhost:5432/libraryDB"
-	}
-
+func clearDB(t *testing.T) {
+	dbURL := "postgres://postgres:password@localhost:5432/libraryDB"
 	conn, err := pgx.Connect(context.Background(), dbURL)
 	require.NoError(t, err, "Failed to connect to database")
 	defer conn.Close(context.Background())
 
-	// Clean database tables
 	_, err = conn.Exec(context.Background(), "DELETE FROM lendings")
 	require.NoError(t, err, "Failed to clean lendings table")
-
 	_, err = conn.Exec(context.Background(), "DELETE FROM users")
 	require.NoError(t, err, "Failed to clean users table")
-
 	_, err = conn.Exec(context.Background(), "DELETE FROM books")
 	require.NoError(t, err, "Failed to clean books table")
 }
 
-func makeRequest(t *testing.T, method, url string, body interface{}) *http.Response {
-	var req *http.Request
-	var err error
-
-	if body != nil {
-		bodyBytes, err := json.Marshal(body)
-		require.NoError(t, err, "Failed to marshal request body")
-		req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
-	} else {
-		req, err = http.NewRequest(method, url, nil)
-	}
-
+func makeRequest(t *testing.T, method, url string, body []byte) *http.Response {
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	require.NoError(t, err, "Failed to create request")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -66,35 +49,53 @@ func makeRequest(t *testing.T, method, url string, body interface{}) *http.Respo
 	return resp
 }
 
+func makeJsonRequest(t *testing.T, method, url string, filePath string) *http.Response {
+	jsonBytes, err := ioutil.ReadFile(filePath)
+	require.NoError(t, err, "Failed to read JSON file")
+	return makeRequest(t, method, url, jsonBytes)
+}
+
 func decodeResponse(t *testing.T, resp *http.Response, target interface{}) {
 	defer resp.Body.Close()
-	err := json.NewDecoder(resp.Body).Decode(target)
-	require.NoError(t, err, "Failed to decode response")
+	bodyBytes, err := io.ReadAll(resp.Body)
+	require.NoError(t, err, "Failed to read response body")
+
+	if len(bodyBytes) == 0 || (bodyBytes[0] != '{' && bodyBytes[0] != '[') {
+		t.Fatalf("Expected JSON response but got: %s", string(bodyBytes))
+	}
+
+	err = json.Unmarshal(bodyBytes, target)
+	require.NoError(t, err, "Failed to decode JSON response")
 }
 
 func TestServices(t *testing.T) {
-
-	serviceURLs := map[string]string{
-		"Direct":   directServiceURL,
-		"Injected": injectedServiceURL,
-	}
-
-	for name, baseURL := range serviceURLs {
-		t.Run(name, func(t *testing.T) {
-			t.Run(fmt.Sprintf("Testing %s-Service", name), func(t *testing.T) { serviceTest(t, baseURL, name) })
-		})
-	}
+	t.Run("Testing Direct-Service", func(t *testing.T) { serviceTest(t, directServiceURL) })
+	t.Run("Testing Injected-Service", func(t *testing.T) { serviceTest(t, injectedServiceURL) })
 }
 
-func serviceTest(t *testing.T, baseURL, serviceName string) {
-	setupTestDatabase(t)
+type reqLending struct {
+	ID         *string   `json:"id,omitempty" db:"id"`
+	BookID     string    `json:"book_id" db:"book_id"`
+	UserID     string    `json:"user_id" db:"user_id"`
+	LendDate   time.Time `json:"lend_date" db:"lend_date"`
+	ReturnDate time.Time `json:"return_date,omitempty" db:"return_date"`
+}
 
+func serviceTest(t *testing.T, baseURL string) {
+	clearDB(t)
+
+	t.Run("Testing Books", func(t *testing.T) { testBooks(t, baseURL) })
+	t.Run("Testing Users", func(t *testing.T) { testUsers(t, baseURL) })
+	t.Run("Testing Lendings", func(t *testing.T) { testLendings(t, baseURL) })
+}
+
+func testBooks(t *testing.T, baseURL string) {
 	book := domain.Book{
-		Title:  "Test Book Direct",
-		Author: "Test Author Direct",
+		Title:  "The Fellowship of the Ring",
+		Author: "J. R. R. Tolkien",
 	}
 
-	resp := makeRequest(t, http.MethodPost, baseURL+"/books", book)
+	resp := makeJsonRequest(t, http.MethodPost, baseURL+"/books", "book_create.json")
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	var createdBook domain.Book
@@ -104,56 +105,46 @@ func serviceTest(t *testing.T, baseURL, serviceName string) {
 	assert.Equal(t, book.Title, createdBook.Title)
 	assert.Equal(t, book.Author, createdBook.Author)
 
-	// Get book by ID
 	resp = makeRequest(t, http.MethodGet, fmt.Sprintf("%s/books/%s", baseURL, createdBook.ID), nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var retrievedBook domain.Book
 	decodeResponse(t, resp, &retrievedBook)
-	assert.Equal(t, createdBook.ID, retrievedBook.ID)
+	assert.Equal(t, createdBook, retrievedBook)
 
-	// Update book
-	retrievedBook.Title = "Updated Book Direct"
-	resp = makeRequest(t, http.MethodPut, fmt.Sprintf("%s/books/%s", baseURL, retrievedBook.ID), retrievedBook)
+	resp = makeJsonRequest(t, http.MethodPut, fmt.Sprintf("%s/books/%s", baseURL, createdBook.ID), "book_update.json")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var updatedBook domain.Book
 	decodeResponse(t, resp, &updatedBook)
-	assert.Equal(t, "Updated Book Direct", updatedBook.Title)
+	assert.Equal(t, "The Two Towers", updatedBook.Title)
 
-	// Get all books
 	resp = makeRequest(t, http.MethodGet, baseURL+"/books", nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var books []domain.Book
 	decodeResponse(t, resp, &books)
-	assert.GreaterOrEqual(t, len(books), 1)
+	assert.Equal(t, len(books), 1)
+	assert.Equal(t, books[0], updatedBook)
 
-	// Delete book
 	resp = makeRequest(t, http.MethodDelete, fmt.Sprintf("%s/books/%s", baseURL, createdBook.ID), nil)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	// Verify deletion
 	resp = makeRequest(t, http.MethodGet, fmt.Sprintf("%s/books/%s", baseURL, createdBook.ID), nil)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
 
-	// Create user
-	user := domain.User{
-		Name:  "Test User Direct",
-		Email: "test.direct@example.com",
-	}
-
-	resp = makeRequest(t, http.MethodPost, baseURL+"/users", user)
+func testUsers(t *testing.T, baseURL string) {
+	resp := makeJsonRequest(t, http.MethodPost, baseURL+"/users", "user_create.json")
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	var createdUser domain.User
 	decodeResponse(t, resp, &createdUser)
 
 	assert.NotEmpty(t, createdUser.ID)
-	assert.Equal(t, user.Name, createdUser.Name)
-	assert.Equal(t, user.Email, createdUser.Email)
+	assert.Equal(t, "Max Mustermann", createdUser.Name)
+	assert.Equal(t, "max@mustermann.de", createdUser.Email)
 
-	// Get user by ID
 	resp = makeRequest(t, http.MethodGet, fmt.Sprintf("%s/users/%s", baseURL, createdUser.ID), nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -161,51 +152,44 @@ func serviceTest(t *testing.T, baseURL, serviceName string) {
 	decodeResponse(t, resp, &retrievedUser)
 	assert.Equal(t, createdUser.ID, retrievedUser.ID)
 
-	// Update user
-	retrievedUser.Name = "Updated User Direct"
-	resp = makeRequest(t, http.MethodPut, fmt.Sprintf("%s/users/%s", baseURL, retrievedUser.ID), retrievedUser)
+	resp = makeJsonRequest(t, http.MethodPut, fmt.Sprintf("%s/users/%s", baseURL, retrievedUser.ID), "user_update.json")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var updatedUser domain.User
 	decodeResponse(t, resp, &updatedUser)
-	assert.Equal(t, "Updated User Direct", updatedUser.Name)
+	assert.Equal(t, "Erika Mustermann", updatedUser.Name)
+	assert.Equal(t, "erika@mustermann.de", updatedUser.Email)
 
-	// Get all users
 	resp = makeRequest(t, http.MethodGet, baseURL+"/users", nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var users []domain.User
 	decodeResponse(t, resp, &users)
-	assert.GreaterOrEqual(t, len(users), 1)
+	assert.Equal(t, len(users), 1)
+	assert.Equal(t, updatedUser, users[0])
+}
 
-	// Note: We don't delete the user here because we'll use it for the lending test
+func testLendings(t *testing.T, baseURL string) {
+	var createdBook domain.Book
+	var createdUser domain.User
 
-	book = domain.Book{
-		Title:  "Lending Test Book Direct",
-		Author: "Lending Test Author Direct",
-	}
-
-	resp = makeRequest(t, http.MethodPost, baseURL+"/books", book)
+	resp := makeJsonRequest(t, http.MethodPost, baseURL+"/books", "book_create.json")
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	decodeResponse(t, resp, &createdBook)
 
-	user = domain.User{
-		Name:  "Lending Test User Direct",
-		Email: "lending.test.direct@example.com",
-	}
-
-	resp = makeRequest(t, http.MethodPost, baseURL+"/users", user)
+	resp = makeJsonRequest(t, http.MethodPost, baseURL+"/users", "user_create.json")
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	decodeResponse(t, resp, &createdUser)
 
-	// Create lending
-	lending := domain.Lending{
+	lending := reqLending{
 		BookID:   createdBook.ID,
 		UserID:   createdUser.ID,
 		LendDate: time.Now(),
 	}
 
-	resp = makeRequest(t, http.MethodPost, baseURL+"/lendings", lending)
+	lendingBytes, err := json.Marshal(lending)
+	assert.NoError(t, err)
+	resp = makeRequest(t, http.MethodPost, baseURL+"/lendings", lendingBytes)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	var createdLending domain.Lending
@@ -215,7 +199,6 @@ func serviceTest(t *testing.T, baseURL, serviceName string) {
 	assert.Equal(t, lending.BookID, createdLending.BookID)
 	assert.Equal(t, lending.UserID, createdLending.UserID)
 
-	// Get lending by ID
 	resp = makeRequest(t, http.MethodGet, fmt.Sprintf("%s/lendings/%s", baseURL, createdLending.ID), nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -223,17 +206,16 @@ func serviceTest(t *testing.T, baseURL, serviceName string) {
 	decodeResponse(t, resp, &retrievedLending)
 	assert.Equal(t, createdLending.ID, retrievedLending.ID)
 
-	// Update lending (mark as returned)
-	returnTime := time.Now().Add(7 * 24 * time.Hour) // Return after a week
-	retrievedLending.ReturnDate = returnTime
-	resp = makeRequest(t, http.MethodPut, fmt.Sprintf("%s/lendings/%s", baseURL, retrievedLending.ID), retrievedLending)
+	lending.ReturnDate = time.Now().Add(7 * 24 * time.Hour)
+	lendingBytes, err = json.Marshal(lending)
+	assert.NoError(t, err)
+	resp = makeRequest(t, http.MethodPut, fmt.Sprintf("%s/lendings/%s", baseURL, retrievedLending.ID), lendingBytes)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var updatedLending domain.Lending
 	decodeResponse(t, resp, &updatedLending)
 	assert.NotZero(t, updatedLending.ReturnDate)
 
-	// Get all lendings
 	resp = makeRequest(t, http.MethodGet, baseURL+"/lendings", nil)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -241,11 +223,9 @@ func serviceTest(t *testing.T, baseURL, serviceName string) {
 	decodeResponse(t, resp, &lendings)
 	assert.GreaterOrEqual(t, len(lendings), 1)
 
-	// Delete lending
 	resp = makeRequest(t, http.MethodDelete, fmt.Sprintf("%s/lendings/%s", baseURL, createdLending.ID), nil)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	// Clean up created book and user
 	resp = makeRequest(t, http.MethodDelete, fmt.Sprintf("%s/books/%s", baseURL, createdBook.ID), nil)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 

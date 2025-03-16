@@ -131,7 +131,7 @@ func TestCreateUser(t *testing.T) {
 	repo := New()
 	user := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 
@@ -147,7 +147,7 @@ func TestGetUsers(t *testing.T) {
 	repo := New()
 	user1 := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 	user2 := domain.User{
@@ -172,7 +172,7 @@ func TestGetUserByID(t *testing.T) {
 	repo := New()
 	user := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 
@@ -219,7 +219,7 @@ func TestDeleteUser(t *testing.T) {
 	repo := New()
 	user := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 
@@ -247,7 +247,7 @@ func TestCreateLending(t *testing.T) {
 	}
 	user := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 
@@ -286,7 +286,7 @@ func TestGetLendings(t *testing.T) {
 	}
 	user1 := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 	user2 := domain.User{
@@ -378,7 +378,7 @@ func TestUpdateLending(t *testing.T) {
 	}
 	user := domain.User{
 		ID:    uuid.New().String(),
-		Name:  "Max Musterman",
+		Name:  "Max Mustermann",
 		Email: "max.musterman@example.com",
 	}
 

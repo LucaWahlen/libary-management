@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"libary-service/internal/domain"
 	"libary-service/internal/injected-service/repository"
@@ -106,7 +107,7 @@ func (s *LibaryService) UpdateBook(w http.ResponseWriter, r *http.Request) {
 
 	updatedBook, err := s.repository.UpdateBook(book)
 	if err != nil {
-		http.Error(w, "Error updating book", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error updating book: %v", err), http.StatusInternalServerError)
 		return
 	}
 
