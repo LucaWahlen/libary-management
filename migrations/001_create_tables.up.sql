@@ -1,0 +1,19 @@
+CREATE TABLE books (
+    id UUID PRIMARY KEY,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL
+);
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE lendings (
+    id UUID PRIMARY KEY,
+    book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lend_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    return_date TIMESTAMP WITH TIME ZONE
+);
