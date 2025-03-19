@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -50,7 +50,8 @@ func makeRequest(t *testing.T, method, url string, body []byte) *http.Response {
 }
 
 func makeJsonRequest(t *testing.T, method, url string, filePath string) *http.Response {
-	jsonBytes, err := ioutil.ReadFile(filePath)
+	// ioutil ist deprecated
+	jsonBytes, err := os.ReadFile(filePath)
 	require.NoError(t, err, "Failed to read JSON file")
 	return makeRequest(t, method, url, jsonBytes)
 }
@@ -60,6 +61,7 @@ func decodeResponse(t *testing.T, resp *http.Response, target interface{}) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	require.NoError(t, err, "Failed to read response body")
 
+	// ich haette erwartet, dass diese Art Fehler auch beim json.Unmarshal auffallen?
 	if len(bodyBytes) == 0 || (bodyBytes[0] != '{' && bodyBytes[0] != '[') {
 		t.Fatalf("Expected JSON response but got: %s", string(bodyBytes))
 	}

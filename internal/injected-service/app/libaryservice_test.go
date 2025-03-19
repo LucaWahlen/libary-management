@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"libary-service/generated/mocks"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"libary-service/generated/mocks"
 )
 
 func TestExtractID(t *testing.T) {
