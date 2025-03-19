@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"libary-service/internal/domain"
 	"log"
 	"os"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type PostgresRepository struct {
@@ -54,6 +55,7 @@ func (repo *PostgresRepository) GetBooks() ([]domain.Book, error) {
 		}
 		books = append(books, b)
 	}
+	// check rows.Err()
 	return books, nil
 }
 

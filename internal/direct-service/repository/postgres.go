@@ -4,15 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"libary-service/internal/domain"
 	"log"
 	"os"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var db *pgx.Conn
 
+// Connect hat (zusaetzlich zu den "gewollten" Problemen) das Problem, dass es mehrfach aufgerufen wird, ohne dass eine bestehende DB connection geclosed wird
+// Das koennte man aber noch abfangen (wie beim Disconnect, wo du auf db != nil pruefst)
+// Das macht das ganze noch immer nicht Threadsafe, aber das ist hier wohl auch nicht der Anspruch ;-)
 func Connect() error {
 	dbURL := os.Getenv("DATABASE_URL")
 	var err error
@@ -51,12 +55,17 @@ func GetBooks() ([]domain.Book, error) {
 	return books, nil
 }
 
+// Du solltest dem Aufrufer eine Moeglichkeit geben, den Fehler "book not found" ohne Stringvergleich zu pruefen
+// Einfachste Moeglichkeit hier ist die Definition eines Fehlers und beim Aufrufer die Verwendung von errors.Is
+var ErrBookNotFound = errors.New("book not found")
+
 func GetBookByID(id string) (domain.Book, error) {
 	var b domain.Book
 	err := db.QueryRow(context.Background(), "SELECT id, title, author FROM books WHERE id = $1", id).
 		Scan(&b.ID, &b.Title, &b.Author)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Book{}, errors.New("book not found")
+		// return domain.Book{}, errors.New("book not found")
+		return domain.Book{}, ErrBookNotFound
 	} else if err != nil {
 		return domain.Book{}, err
 	}
@@ -80,7 +89,8 @@ func UpdateBook(book domain.Book) (domain.Book, error) {
 	}
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return domain.Book{}, errors.New("book not found")
+		return domain.Book{}, ErrBookNotFound
+		// return domain.Book{}, errors.New("book not found")
 	}
 	return book, nil
 }
@@ -92,7 +102,8 @@ func DeleteBook(id string) error {
 	}
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return errors.New("book not found")
+		return ErrBookNotFound
+		// return errors.New("book not found")
 	}
 	return nil
 }
@@ -112,6 +123,7 @@ func GetUsers() ([]domain.User, error) {
 		}
 		users = append(users, u)
 	}
+	// man sollte hier (siehe Doku von rows.Next()) auf rows.Err() pruefen
 	return users, nil
 }
 

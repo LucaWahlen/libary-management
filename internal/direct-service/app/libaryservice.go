@@ -3,17 +3,23 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"github.com/google/uuid"
 	"libary-service/internal/direct-service/repository"
 	"libary-service/internal/direct-service/validation"
 	"libary-service/internal/domain"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+// die Funktion "extractID" brauchst du ja nur, weil du zwar std konforme Handler Funktionen nutzt (und damit kein Zugriff auf die gin-Funktionalitaet hast),
+// aber nicht den std ServeMux, sondern gin (ansonten koenntest du seit go 1.22 r.PathValue nehmen, um die id zu bekommen)
+// -> Ich wuerde heute eher den std ServeMux nehmen, da er eben seit go 1.22 diese Moeglichkeiten hat (und du nutzt von gin ja nix?) 
 
 // extractID parses an ID from the request URL path.
 // The basePath should be formated like this: "/books/"
 func extractID(r *http.Request, basePath string) (string, error) {
+	r.PathValue(name string)
 	path := r.URL.Path
 	if !strings.HasPrefix(path, basePath) {
 		return "", errors.New("invalid path")
@@ -42,7 +48,14 @@ func GetBookByID(w http.ResponseWriter, r *http.Request) {
 
 	book, err := repository.GetBookByID(id)
 	if err != nil {
-		http.Error(w, "Book not found", http.StatusNotFound)
+		// das stimmt hier nicht ganz, koennte ja auch ein anderer Fehler sein
+		// http.Error(w, "Book not found", http.StatusNotFound)
+		if errors.Is(err, repository.ErrBookNotFound) {
+			http.Error(w, "Book not found", http.StatusNotFound)
+			return
+		} else {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
