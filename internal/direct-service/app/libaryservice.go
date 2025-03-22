@@ -3,9 +3,9 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"libary-service/internal/direct-service/repository"
-	"libary-service/internal/direct-service/validation"
 	"libary-service/internal/domain"
 	"net/http"
 	"strings"
@@ -57,7 +57,17 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckBook(book); err != nil {
+	var errs []error
+	if book.Title == "" {
+		errs = append(errs, fmt.Errorf("title is required"))
+	}
+	if book.Author == "" {
+		errs = append(errs, fmt.Errorf("author is required"))
+	}
+	if book.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -88,7 +98,17 @@ func UpdateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckBook(book); err != nil {
+	var errs []error
+	if book.Title == "" {
+		errs = append(errs, fmt.Errorf("title is required"))
+	}
+	if book.Author == "" {
+		errs = append(errs, fmt.Errorf("author is required"))
+	}
+	if book.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -154,7 +174,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckUser(user); err != nil {
+	var errs []error
+	if user.Name == "" {
+		errs = append(errs, fmt.Errorf("name is required"))
+	}
+	if user.Email == "" {
+		errs = append(errs, fmt.Errorf("email is required"))
+	}
+	if user.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -185,7 +215,17 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckUser(user); err != nil {
+	var errs []error
+	if user.Name == "" {
+		errs = append(errs, fmt.Errorf("name is required"))
+	}
+	if user.Email == "" {
+		errs = append(errs, fmt.Errorf("email is required"))
+	}
+	if user.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -251,7 +291,31 @@ func CreateLending(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckLending(lending); err != nil {
+	var errs []error
+	if lending.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+
+	_, bookMissing := repository.GetBookByID(lending.BookID)
+	if bookMissing != nil {
+		errs = append(errs, fmt.Errorf("book not found"))
+	}
+
+	_, userMissing := repository.GetUserByID(lending.UserID)
+	if userMissing != nil {
+		errs = append(errs, fmt.Errorf("user not found"))
+	}
+
+	if lending.LendDate.IsZero() {
+		errs = append(errs, fmt.Errorf("lend_date is required"))
+	}
+
+	if !lending.ReturnDate.IsZero() {
+		if !lending.LendDate.Before(lending.ReturnDate) {
+			errs = append(errs, fmt.Errorf("lend_date is less than return_date"))
+		}
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -282,7 +346,31 @@ func UpdateLending(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validation.CheckLending(lending); err != nil {
+	var errs []error
+	if lending.ID != "" {
+		errs = append(errs, fmt.Errorf("id should be empty"))
+	}
+
+	_, bookMissing := repository.GetBookByID(lending.BookID)
+	if bookMissing != nil {
+		errs = append(errs, fmt.Errorf("book not found"))
+	}
+
+	_, userMissing := repository.GetUserByID(lending.UserID)
+	if userMissing != nil {
+		errs = append(errs, fmt.Errorf("user not found"))
+	}
+
+	if lending.LendDate.IsZero() {
+		errs = append(errs, fmt.Errorf("lend_date is required"))
+	}
+
+	if !lending.ReturnDate.IsZero() {
+		if !lending.LendDate.Before(lending.ReturnDate) {
+			errs = append(errs, fmt.Errorf("lend_date is less than return_date"))
+		}
+	}
+	if err := errors.Join(errs...); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

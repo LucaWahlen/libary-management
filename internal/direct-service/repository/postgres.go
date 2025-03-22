@@ -6,35 +6,13 @@ import (
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"libary-service/internal/domain"
-	"log"
-	"os"
 	"time"
 )
 
-var db *pgx.Conn
-
-func Connect() error {
-	dbURL := os.Getenv("DATABASE_URL")
-	var err error
-	conn, err := pgx.Connect(context.Background(), dbURL)
-	if err != nil {
-		return err
-	}
-	db = conn
-	log.Printf("Successfully connected to database")
-	return nil
-}
-
-func Disconnect() error {
-	if db != nil {
-		db.Close(context.Background())
-		log.Printf("Successfully disconnected from database")
-	}
-	return errors.New("error closing database connection")
-}
+var DB *pgx.Conn
 
 func GetBooks() ([]domain.Book, error) {
-	rows, err := db.Query(context.Background(), "SELECT id, title, author FROM books")
+	rows, err := DB.Query(context.Background(), "SELECT id, title, author FROM books")
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +33,7 @@ var ErrBookNotFound = errors.New("book not found")
 
 func GetBookByID(id string) (domain.Book, error) {
 	var b domain.Book
-	err := db.QueryRow(context.Background(), "SELECT id, title, author FROM books WHERE id = $1", id).
+	err := DB.QueryRow(context.Background(), "SELECT id, title, author FROM books WHERE id = $1", id).
 		Scan(&b.ID, &b.Title, &b.Author)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Book{}, ErrBookNotFound
@@ -66,7 +44,7 @@ func GetBookByID(id string) (domain.Book, error) {
 }
 
 func CreateBook(book domain.Book) (domain.Book, error) {
-	_, err := db.Exec(context.Background(), "INSERT INTO books (id, title, author) VALUES ($1, $2, $3)",
+	_, err := DB.Exec(context.Background(), "INSERT INTO books (id, title, author) VALUES ($1, $2, $3)",
 		book.ID, book.Title, book.Author)
 	if err != nil {
 		return domain.Book{}, err
@@ -75,7 +53,7 @@ func CreateBook(book domain.Book) (domain.Book, error) {
 }
 
 func UpdateBook(book domain.Book) (domain.Book, error) {
-	result, err := db.Exec(context.Background(), "UPDATE books SET title = $2, author = $3 WHERE id = $1",
+	result, err := DB.Exec(context.Background(), "UPDATE books SET title = $2, author = $3 WHERE id = $1",
 		book.ID, book.Title, book.Author)
 	if err != nil {
 		return domain.Book{}, err
@@ -88,7 +66,7 @@ func UpdateBook(book domain.Book) (domain.Book, error) {
 }
 
 func DeleteBook(id string) error {
-	result, err := db.Exec(context.Background(), "DELETE FROM books WHERE id = $1", id)
+	result, err := DB.Exec(context.Background(), "DELETE FROM books WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -100,7 +78,7 @@ func DeleteBook(id string) error {
 }
 
 func GetUsers() ([]domain.User, error) {
-	rows, err := db.Query(context.Background(), "SELECT id, name, email FROM users")
+	rows, err := DB.Query(context.Background(), "SELECT id, name, email FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +99,7 @@ var ErrUserNotFound = errors.New("user not found")
 
 func GetUserByID(id string) (domain.User, error) {
 	var u domain.User
-	err := db.QueryRow(context.Background(), "SELECT id, name, email FROM users WHERE id = $1", id).
+	err := DB.QueryRow(context.Background(), "SELECT id, name, email FROM users WHERE id = $1", id).
 		Scan(&u.ID, &u.Name, &u.Email)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.User{}, ErrUserNotFound
@@ -132,7 +110,7 @@ func GetUserByID(id string) (domain.User, error) {
 }
 
 func CreateUser(user domain.User) (domain.User, error) {
-	_, err := db.Exec(context.Background(), "INSERT INTO users (id, name, email) VALUES ($1, $2, $3)",
+	_, err := DB.Exec(context.Background(), "INSERT INTO users (id, name, email) VALUES ($1, $2, $3)",
 		user.ID, user.Name, user.Email)
 	if err != nil {
 		return domain.User{}, err
@@ -141,7 +119,7 @@ func CreateUser(user domain.User) (domain.User, error) {
 }
 
 func UpdateUser(user domain.User) (domain.User, error) {
-	result, err := db.Exec(context.Background(), "UPDATE users SET name = $2, email = $3 WHERE id = $1",
+	result, err := DB.Exec(context.Background(), "UPDATE users SET name = $2, email = $3 WHERE id = $1",
 		user.ID, user.Name, user.Email)
 	if err != nil {
 		return domain.User{}, err
@@ -154,7 +132,7 @@ func UpdateUser(user domain.User) (domain.User, error) {
 }
 
 func DeleteUser(id string) error {
-	result, err := db.Exec(context.Background(), "DELETE FROM users WHERE id = $1", id)
+	result, err := DB.Exec(context.Background(), "DELETE FROM users WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -166,7 +144,7 @@ func DeleteUser(id string) error {
 }
 
 func GetLendings() ([]domain.Lending, error) {
-	rows, err := db.Query(context.Background(), "SELECT id, book_id, user_id, lend_date, return_date FROM lendings")
+	rows, err := DB.Query(context.Background(), "SELECT id, book_id, user_id, lend_date, return_date FROM lendings")
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +172,7 @@ var ErrLendingNotFound = errors.New("lending not found")
 func GetLendingByID(id string) (domain.Lending, error) {
 	var l domain.Lending
 	var returnDate sql.NullTime
-	err := db.QueryRow(context.Background(), "SELECT id, book_id, user_id, lend_date, return_date FROM lendings WHERE id = $1", id).
+	err := DB.QueryRow(context.Background(), "SELECT id, book_id, user_id, lend_date, return_date FROM lendings WHERE id = $1", id).
 		Scan(&l.ID, &l.BookID, &l.UserID, &l.LendDate, &returnDate)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Lending{}, ErrLendingNotFound
@@ -216,7 +194,7 @@ func CreateLending(lending domain.Lending) (domain.Lending, error) {
 	} else {
 		returnDate = lending.ReturnDate
 	}
-	_, err := db.Exec(context.Background(),
+	_, err := DB.Exec(context.Background(),
 		"INSERT INTO lendings (id, book_id, user_id, lend_date, return_date) VALUES ($1, $2, $3, $4, $5)",
 		lending.ID, lending.BookID, lending.UserID, lending.LendDate, returnDate,
 	)
@@ -233,7 +211,7 @@ func UpdateLending(lending domain.Lending) (domain.Lending, error) {
 	} else {
 		returnDate = lending.ReturnDate
 	}
-	result, err := db.Exec(context.Background(),
+	result, err := DB.Exec(context.Background(),
 		"UPDATE lendings SET book_id = $2, user_id = $3, lend_date = $4, return_date = $5 WHERE id = $1",
 		lending.ID, lending.BookID, lending.UserID, lending.LendDate, returnDate,
 	)
@@ -248,7 +226,7 @@ func UpdateLending(lending domain.Lending) (domain.Lending, error) {
 }
 
 func DeleteLending(id string) error {
-	result, err := db.Exec(context.Background(), "DELETE FROM lendings WHERE id = $1", id)
+	result, err := DB.Exec(context.Background(), "DELETE FROM lendings WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
