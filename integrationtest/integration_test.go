@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -50,7 +50,7 @@ func makeRequest(t *testing.T, method, url string, body []byte) *http.Response {
 }
 
 func makeJsonRequest(t *testing.T, method, url string, filePath string) *http.Response {
-	jsonBytes, err := ioutil.ReadFile(filePath)
+	jsonBytes, err := os.ReadFile(filePath)
 	require.NoError(t, err, "Failed to read JSON file")
 	return makeRequest(t, method, url, jsonBytes)
 }
